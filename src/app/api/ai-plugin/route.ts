@@ -9,17 +9,17 @@ export async function GET() {
             description: "API for the boilerplate",
             version: "1.0.0",
         },
-        servers: [
+        "servers": [
             {
-                url: PLUGIN_URL,
-            },
+                "url": PLUGIN_URL
+            }
         ],
         "x-mb": {
             "account-id": ACCOUNT_ID,
             assistant: {
-                name: "Your Assistant",
-                description: "An assistant that answers with blockchain information, tells the user's account id, interacts with twitter, creates transaction payloads for NEAR and EVM blockchains, and flips coins.",
-                instructions: "You create near and evm transactions, give blockchain information, tell the user's account id, interact with twitter and flip coins. For blockchain transactions, first generate a transaction payload using the appropriate endpoint (/api/tools/create-near-transaction or /api/tools/create-evm-transaction), then explicitly use the 'generate-transaction' tool for NEAR or 'generate-evm-tx' tool for EVM to actually send the transaction on the client side. For EVM transactions, make sure to provide the 'to' address (recipient) and 'amount' (in ETH) parameters when calling /api/tools/create-evm-transaction. Simply getting the payload from the endpoints is not enough - the corresponding tool must be used to execute the transaction.",
+                name: "BadAss Agent",
+                description: "An assistant that answers with blockchain information, tells the user's account id, interacts with twitter, creates transaction payloads for NEAR and EVM blockchains, flips coins, and provides token information from DexScreener.",
+                instructions: "You create near and evm transactions, give blockchain information, tell the user's account id, interact with twitter, flip coins, and fetch token information from DexScreener. For blockchain transactions, first generate a transaction payload using the appropriate endpoint (/api/tools/create-near-transaction or /api/tools/create-evm-transaction), then explicitly use the 'generate-transaction' tool for NEAR or 'generate-evm-tx' tool for EVM to actually send the transaction on the client side. For EVM transactions, make sure to provide the 'to' address (recipient) and 'amount' (in ETH) parameters when calling /api/tools/create-evm-transaction. Simply getting the payload from the endpoints is not enough - the corresponding tool must be used to execute the transaction. When using DexScreener, provide only the token name to get its information.",
                 tools: [{ type: "generate-transaction" }, { type: "generate-evm-tx" }, { type: "sign-message" }]
             },
         },
@@ -395,6 +395,115 @@ export async function GET() {
                         },
                         "500": {
                             description: "Error response",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            error: {
+                                                type: "string",
+                                                description: "Error message"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "/api/tools/dexscreener": {
+                get: {
+                    operationId: "searchDexScreener",
+                    summary: "Get token information from DexScreener",
+                    description: "Retrieve token information and trading pairs from DexScreener",
+                    parameters: [
+                        {
+                            name: "query",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Token name to search for"
+                        }
+                    ],
+                    responses: {
+                        "200": {
+                            description: "Successful response",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            pairs: {
+                                                type: "array",
+                                                items: {
+                                                    type: "object",
+                                                    properties: {
+                                                        chainId: {
+                                                            type: "string",
+                                                            description: "The blockchain ID"
+                                                        },
+                                                        dexId: {
+                                                            type: "string",
+                                                            description: "The DEX identifier"
+                                                        },
+                                                        url: {
+                                                            type: "string",
+                                                            description: "DexScreener URL for the pair"
+                                                        },
+                                                        baseToken: {
+                                                            type: "object",
+                                                            properties: {
+                                                                name: {
+                                                                    type: "string",
+                                                                    description: "Token name"
+                                                                },
+                                                                symbol: {
+                                                                    type: "string",
+                                                                    description: "Token symbol"
+                                                                },
+                                                                address: {
+                                                                    type: "string",
+                                                                    description: "Token contract address"
+                                                                }
+                                                            }
+                                                        },
+                                                        priceUsd: {
+                                                            type: "string",
+                                                            description: "Current price in USD"
+                                                        },
+                                                        volume24h: {
+                                                            type: "string",
+                                                            description: "24-hour trading volume"
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "400": {
+                            description: "Bad request",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            error: {
+                                                type: "string",
+                                                description: "Error message"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "500": {
+                            description: "Server error",
                             content: {
                                 "application/json": {
                                     schema: {
